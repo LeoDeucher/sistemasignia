@@ -22,9 +22,6 @@ class SigniaDatabase extends Dexie {
     constructor() {
         super('SigniaIntranetDB');
         
-        // Define tables and indexes
-        // Cast to any to avoid type errors if Dexie type definitions are incomplete in the environment
-        
         // Version 1: Initial Schema
         (this as any).version(1).stores({
             employees: 'id, department, role',
@@ -42,7 +39,7 @@ class SigniaDatabase extends Dexie {
             patchNotes: 'version, date'
         });
         
-        // Version 3: Redundant ensure of schema to force upgrade in stuck browsers
+        // Version 3: Redundant ensure of schema
         (this as any).version(3).stores({
             employees: 'id, department, role',
             banners: 'id, active, order',
@@ -77,7 +74,6 @@ export const initDB = async () => {
                 await db.wiki.bulkAdd(INITIAL_WIKI);
                 await db.apps.bulkAdd(INITIAL_APPS);
                 await db.marketingAssets.bulkAdd(INITIAL_MARKETING);
-                // Ensure patch notes are unique by version before adding
                 const uniqueNotes = INITIAL_PATCH_NOTES.filter((note, index, self) => 
                     index === self.findIndex((t) => (t.version === note.version))
                 );
@@ -90,7 +86,69 @@ export const initDB = async () => {
     }
 };
 
-// Service Layer wrapper (mimics what a Vercel API client would look like)
+// Data Safety Features: Backup and Restore
+export const backupDatabase = async () => {
+    try {
+        const data = {
+            employees: await db.employees.toArray(),
+            banners: await db.banners.toArray(),
+            posts: await db.posts.toArray(),
+            resources: await db.resources.toArray(),
+            wiki: await db.wiki.toArray(),
+            apps: await db.apps.toArray(),
+            marketingAssets: await db.marketingAssets.toArray(),
+            patchNotes: await db.patchNotes.toArray(),
+            timestamp: new Date().toISOString(),
+            schemaVersion: 3
+        };
+        return JSON.stringify(data, null, 2);
+    } catch (err) {
+        console.error("Backup failed:", err);
+        throw new Error("Failed to generate backup.");
+    }
+};
+
+export const restoreDatabase = async (jsonString: string) => {
+    try {
+        const data = JSON.parse(jsonString);
+        if (!data.timestamp || !data.employees) throw new Error("Invalid backup file format.");
+
+        await (db as any).transaction('rw', 
+            [db.employees, db.banners, db.posts, db.resources, db.wiki, db.apps, db.marketingAssets, db.patchNotes], 
+            async () => {
+            // Clear existing data to prevent duplicates/conflicts
+            await db.employees.clear(); 
+            if(data.employees?.length) await db.employees.bulkAdd(data.employees);
+
+            await db.banners.clear(); 
+            if(data.banners?.length) await db.banners.bulkAdd(data.banners);
+
+            await db.posts.clear(); 
+            if(data.posts?.length) await db.posts.bulkAdd(data.posts);
+
+            await db.resources.clear(); 
+            if(data.resources?.length) await db.resources.bulkAdd(data.resources);
+
+            await db.wiki.clear(); 
+            if(data.wiki?.length) await db.wiki.bulkAdd(data.wiki);
+
+            await db.apps.clear(); 
+            if(data.apps?.length) await db.apps.bulkAdd(data.apps);
+
+            await db.marketingAssets.clear(); 
+            if(data.marketingAssets?.length) await db.marketingAssets.bulkAdd(data.marketingAssets);
+
+            await db.patchNotes.clear(); 
+            if(data.patchNotes?.length) await db.patchNotes.bulkAdd(data.patchNotes);
+        });
+        return true;
+    } catch (err) {
+        console.error("Restore failed:", err);
+        throw err;
+    }
+};
+
+// Service Layer wrapper
 export const api = {
     employees: {
         list: () => db.employees.toArray(),
@@ -102,5 +160,10 @@ export const api = {
         add: (b: Banner) => db.banners.add(b),
         update: (id: string, updates: Partial<Banner>) => db.banners.update(id, updates),
     },
-    // We can expand this pattern for all entities
+    // Generic handlers for dynamic admin usage
+    generic: {
+        add: (table: string, item: any) => (db as any)[table].add(item),
+        update: (table: string, id: string, updates: any) => (db as any)[table].update(id, updates),
+        delete: (table: string, id: string) => (db as any)[table].delete(id),
+    }
 };

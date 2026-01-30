@@ -99,7 +99,7 @@ export const INITIAL_POSTS: BlogPost[] = [
         id: "p1",
         title: "Launching the New Brand Identity",
         excerpt: "We are thrilled to announce our new logo and color palette...",
-        content: "<p>We are thrilled to announce our new logo and color palette. This change reflects our evolution as a company.</p><h3>Why the change?</h3><p>We wanted something more modern.</p>",
+        content: "<p>We are thrilled to announce our new logo and color palette. This change reflects our evolution as a company.</p><h3>Why the change?</h3><p>We wanted something more modern.</p><p>The new blue represents trust and technology, while the clean lines symbolize our commitment to clarity in design.</p>",
         coverImage: "https://picsum.photos/800/400?random=1",
         authorId: "6",
         date: "2023-10-25",
@@ -109,7 +109,7 @@ export const INITIAL_POSTS: BlogPost[] = [
         id: "p2",
         title: "Holiday Party Details",
         excerpt: "Get ready for the biggest event of the year!",
-        content: "<p>The holiday party will be held at the Grand Hotel.</p>",
+        content: "<p>The holiday party will be held at the Grand Hotel.</p><p><strong>Dress code:</strong> Black Tie.</p><p>Please RSVP by the end of the week.</p>",
         coverImage: "https://picsum.photos/800/400?random=2",
         authorId: "1",
         date: "2023-10-20",
@@ -119,7 +119,7 @@ export const INITIAL_POSTS: BlogPost[] = [
         id: "p3",
         title: "Tech Talk: The Future of AI",
         excerpt: "Join Bob for a deep dive into Gemini API.",
-        content: "<p>Bob will be discussing how we can leverage Gemini 1.5 Pro.</p>",
+        content: "<p>Bob will be discussing how we can leverage Gemini 1.5 Pro to automate our internal workflows.</p><ul><li>Automatic Summarization</li><li>Code Generation</li><li>Data Analysis</li></ul>",
         coverImage: "https://picsum.photos/800/400?random=3",
         authorId: "2",
         date: "2023-10-18",
@@ -162,19 +162,25 @@ export const INITIAL_WIKI: WikiPage[] = [
         id: "w1",
         title: "Our Core Values",
         category: "Culture",
-        content: "1. Innovation\n2. Integrity\n3. Collaboration"
+        content: "1. **Innovation**: We push boundaries.\n2. **Integrity**: We do the right thing.\n3. **Collaboration**: We work better together."
     },
     {
         id: "w2",
-        title: "Health Insurance",
+        title: "Health Insurance Overview",
         category: "Benefits",
-        content: "We offer comprehensive health coverage..."
+        content: "We offer comprehensive health coverage including dental and vision. Please refer to the HR portal for enrollment forms."
     },
     {
         id: "w3",
         title: "Expense Reimbursement",
         category: "Processes",
-        content: "Submit your expenses via the finance portal by the 25th."
+        content: "Submit your expenses via the finance portal by the 25th of each month. Receipts are required for amounts over $50."
+    },
+    {
+        id: "w4",
+        title: "Remote Work Policy",
+        category: "Processes",
+        content: "Employees are allowed to work remotely up to 3 days a week. Please coordinate with your manager."
     }
 ];
 
@@ -184,7 +190,7 @@ export const INITIAL_APPS: AppLink[] = [
         name: "Jira",
         icon: "Ticket",
         url: "#",
-        description: "Project Tracking",
+        description: "Project Tracking & Agile Boards",
         category: "External"
     },
     {
@@ -192,7 +198,7 @@ export const INITIAL_APPS: AppLink[] = [
         name: "Slack",
         icon: "MessageSquare",
         url: "#",
-        description: "Communication",
+        description: "Team Communication & Alerts",
         category: "External"
     },
     {
@@ -208,8 +214,24 @@ export const INITIAL_APPS: AppLink[] = [
         name: "HR Portal",
         icon: "Users",
         url: "#",
-        description: "Leave & Payroll",
+        description: "Leave Management & Payroll",
         category: "Internal"
+    },
+    {
+        id: "a5",
+        name: "Figma",
+        icon: "PenTool",
+        url: "#",
+        description: "Design & Prototyping",
+        category: "External"
+    },
+    {
+        id: "a6",
+        name: "GitHub",
+        icon: "Github",
+        url: "#",
+        description: "Source Code Repository",
+        category: "External"
     }
 ];
 
@@ -220,8 +242,26 @@ export const INITIAL_MARKETING: MarketingAsset[] = [
 
 export const INITIAL_PATCH_NOTES: PatchNote[] = [
     {
-        version: "1.1.5",
+        version: "1.2.1",
         date: new Date().toISOString().split('T')[0],
+        changes: [
+            "Hotfix: Resolvido erro de tipagem no manipulador de exclusão (handleDelete) onde Promise<number> não era compatível com Promise<void>.",
+            "Manutenção: Atualização da lista de patch notes."
+        ]
+    },
+    {
+        version: "1.2.0",
+        date: new Date().toISOString().split('T')[0],
+        changes: [
+            "Feature Completa: Implementação dos módulos Wiki, Blog, e Aplicativos (Apps).",
+            "Segurança de Dados: Novo sistema de Backup e Restauração na área administrativa.",
+            "Admin Power: Adicionado gerenciamento completo de conteúdo (CRUD) para Blog, Wiki e Apps.",
+            "UX: Adicionado sistema de notificações (Toasts) para feedback de ações."
+        ]
+    },
+    {
+        version: "1.1.5",
+        date: "2023-11-01",
         changes: [
             "Hotfix: Correção de erros de tipagem com a biblioteca D3.js no Organograma.",
             "Estabilidade: Garantia de renderização do organograma mesmo com definições de tipo ausentes."
@@ -229,7 +269,7 @@ export const INITIAL_PATCH_NOTES: PatchNote[] = [
     },
     {
         version: "1.1.4",
-        date: new Date().toISOString().split('T')[0],
+        date: "2023-10-31",
         changes: [
             "Critical Hotfix: Resolvido erro de 'Tela Branca' removendo a dependência estrita de indexação no carregamento.",
             "Database: Ordenação de notas de atualização migrada para memória para garantir estabilidade.",
