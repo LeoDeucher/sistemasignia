@@ -242,8 +242,25 @@ export const INITIAL_MARKETING: MarketingAsset[] = [
 
 export const INITIAL_PATCH_NOTES: PatchNote[] = [
     {
-        version: "1.2.1",
+        version: "1.2.3",
         date: new Date().toISOString().split('T')[0],
+        changes: [
+            "Bugfix: Corrigido erro de tipagem no módulo de Admin (Banners) onde Promise<number> conflitava com Promise<void>.",
+            "Estabilidade: Reforço na tipagem das funções assíncronas do controlador global."
+        ]
+    },
+    {
+        version: "1.2.2",
+        date: new Date().toISOString().split('T')[0],
+        changes: [
+            "Melhoria UI: Novo sistema de modal para cadastro de usuários no painel Admin.",
+            "Feature: Agora é possível especificar Nome, Cargo, Departamento e Data de Nascimento ao criar um usuário.",
+            "Backend: Geração automática de e-mails baseada no nome do novo usuário."
+        ]
+    },
+    {
+        version: "1.2.1",
+        date: "2023-11-02",
         changes: [
             "Hotfix: Resolvido erro de tipagem no manipulador de exclusão (handleDelete) onde Promise<number> não era compatível com Promise<void>.",
             "Manutenção: Atualização da lista de patch notes."
@@ -251,7 +268,7 @@ export const INITIAL_PATCH_NOTES: PatchNote[] = [
     },
     {
         version: "1.2.0",
-        date: new Date().toISOString().split('T')[0],
+        date: "2023-11-02",
         changes: [
             "Feature Completa: Implementação dos módulos Wiki, Blog, e Aplicativos (Apps).",
             "Segurança de Dados: Novo sistema de Backup e Restauração na área administrativa.",

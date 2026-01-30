@@ -27,6 +27,24 @@ const ToastContainer = ({ toasts, removeToast }: { toasts: Toast[], removeToast:
     </div>
 );
 
+// --- Modal Component ---
+const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 className="font-bold text-lg text-gray-900">{title}</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition"><Lucide.X size={20}/></button>
+                </div>
+                <div className="p-6">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- Global State Controller (Async + DB) ---
 const useAppController = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -509,16 +527,35 @@ const AdminModule = ({ store }: { store: ReturnType<typeof useAppController> }) 
     const [backupFile, setBackupFile] = useState<File | null>(null);
 
     // User Management
-    const [newEmpName, setNewEmpName] = useState("");
+    const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+    const [newUserForm, setNewUserForm] = useState({
+        name: "",
+        role: "",
+        department: Department.OPERATIONS,
+        birthday: ""
+    });
+
     const handleAddEmp = () => store.performAction(async () => {
-        if (!newEmpName) throw new Error("Name required");
+        if (!newUserForm.name || !newUserForm.role) throw new Error("Name and Role are required");
+        
+        // Generate pseudo-email based on name
+        const emailSlug = newUserForm.name.toLowerCase().replace(/\s+/g, '.');
+        const email = `${emailSlug}@signia.studio`;
+
         await api.employees.add({
             id: Date.now().toString(),
-            name: newEmpName, role: "New Hire", department: Department.OPERATIONS,
-            email: "new@signia.studio", avatar: "https://picsum.photos/200", bio: "Welcome!",
-            joinedDate: new Date().toISOString().split('T')[0], birthday: "01-01"
+            name: newUserForm.name, 
+            role: newUserForm.role, 
+            department: newUserForm.department,
+            email: email, 
+            avatar: `https://ui-avatars.com/api/?name=${newUserForm.name}&background=random`, 
+            bio: "Welcome to the team!",
+            joinedDate: new Date().toISOString().split('T')[0], 
+            birthday: newUserForm.birthday || "01-01" // Default if missing
         });
-        setNewEmpName("");
+        
+        setNewUserForm({ name: "", role: "", department: Department.OPERATIONS, birthday: "" });
+        setIsUserModalOpen(false);
     }, "Employee added successfully");
 
     // Backup Management
@@ -565,16 +602,77 @@ const AdminModule = ({ store }: { store: ReturnType<typeof useAppController> }) 
 
             {activeTab === 'users' && (
                 <div className="space-y-4">
-                    <div className="flex gap-4 mb-4">
-                        <input value={newEmpName} onChange={(e) => setNewEmpName(e.target.value)} placeholder="New Employee Name" className="border p-2 rounded flex-1" />
-                        <button onClick={handleAddEmp} className="bg-signia-600 text-white px-4 py-2 rounded hover:bg-signia-700">Add User</button>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-gray-700">Team Members</h3>
+                        <button onClick={() => setIsUserModalOpen(true)} className="bg-signia-600 text-white px-4 py-2 rounded-lg hover:bg-signia-700 flex items-center gap-2 shadow-sm transition">
+                            <Lucide.Plus size={18}/> Add User
+                        </button>
                     </div>
+
                     <div className="bg-white rounded shadow overflow-hidden">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-500 font-medium"><tr><th className="px-4 py-3">Name</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Actions</th></tr></thead>
-                            <tbody className="divide-y">{store.employees.map(emp => (<tr key={emp.id} className="hover:bg-gray-50"><td className="px-4 py-3">{emp.name}</td><td className="px-4 py-3 text-gray-500">{emp.role}</td><td className="px-4 py-3"><button onClick={() => handleDelete('employees', emp.id)} className="text-red-500 hover:text-red-700">Delete</button></td></tr>))}</tbody>
+                            <thead className="bg-gray-50 text-gray-500 font-medium"><tr><th className="px-4 py-3">Name</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Dept</th><th className="px-4 py-3">Actions</th></tr></thead>
+                            <tbody className="divide-y">{store.employees.map(emp => (
+                                <tr key={emp.id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-3 font-medium">{emp.name}</td>
+                                    <td className="px-4 py-3 text-gray-500">{emp.role}</td>
+                                    <td className="px-4 py-3 text-gray-500"><Badge>{emp.department}</Badge></td>
+                                    <td className="px-4 py-3"><button onClick={() => handleDelete('employees', emp.id)} className="text-red-500 hover:text-red-700"><Lucide.Trash2 size={16}/></button></td>
+                                </tr>
+                            ))}</tbody>
                         </table>
                     </div>
+
+                    <Modal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} title="Add New Team Member">
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input 
+                                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-signia-500 outline-none" 
+                                    placeholder="e.g. Jane Doe"
+                                    value={newUserForm.name}
+                                    onChange={e => setNewUserForm({...newUserForm, name: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Role / Job Title</label>
+                                <input 
+                                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-signia-500 outline-none" 
+                                    placeholder="e.g. Product Manager"
+                                    value={newUserForm.role}
+                                    onChange={e => setNewUserForm({...newUserForm, role: e.target.value})}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                                    <select 
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-signia-500 outline-none"
+                                        value={newUserForm.department}
+                                        onChange={e => setNewUserForm({...newUserForm, department: e.target.value as Department})}
+                                    >
+                                        {Object.values(Department).map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Birthday</label>
+                                    <input 
+                                        type="date"
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-signia-500 outline-none"
+                                        value={newUserForm.birthday} // In real app, might need format conversion MM-DD
+                                        onChange={e => setNewUserForm({...newUserForm, birthday: e.target.value})}
+                                    />
+                                    <p className="text-xs text-gray-400 mt-1">Used for celebrations widget</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={handleAddEmp} 
+                                className="w-full bg-signia-600 text-white font-bold py-2 rounded-lg mt-4 hover:bg-signia-700 transition shadow"
+                            >
+                                Create Account
+                            </button>
+                        </div>
+                    </Modal>
                 </div>
             )}
 
@@ -585,7 +683,7 @@ const AdminModule = ({ store }: { store: ReturnType<typeof useAppController> }) 
                         <div key={b.id} className="flex items-center gap-4 bg-white p-4 rounded shadow">
                             <img src={b.imageUrl} className="w-32 h-16 object-cover rounded" alt="Banner" />
                             <div className="flex-1"><h4 className="font-bold">{b.title}</h4></div>
-                            <button onClick={() => store.performAction(async () => api.banners.update(b.id, { active: !b.active }), "Banner updated")} className={`px-3 py-1 rounded text-xs font-bold ${b.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{b.active ? 'Active' : 'Inactive'}</button>
+                            <button onClick={() => store.performAction(async () => { await api.banners.update(b.id, { active: !b.active }); }, "Banner updated")} className={`px-3 py-1 rounded text-xs font-bold ${b.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{b.active ? 'Active' : 'Inactive'}</button>
                         </div>
                     ))}
                 </div>
