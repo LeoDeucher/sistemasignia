@@ -29,7 +29,13 @@ const useAppController = () => {
     const resources = useLiveQuery(() => db.resources.toArray()) || [];
     const wiki = useLiveQuery(() => db.wiki.toArray()) || [];
     const apps = useLiveQuery(() => db.apps.toArray()) || [];
-    const patchNotes = useLiveQuery(() => db.patchNotes.orderBy('date').reverse().toArray()) || [];
+    
+    // SAFE QUERY: Perform sorting in memory to prevent SchemaError if 'date' index is missing in older DB versions
+    const patchNotes = useLiveQuery(async () => {
+        const notes = await db.patchNotes.toArray();
+        return notes.sort((a, b) => b.date.localeCompare(a.date));
+    }) || [];
+    
     const marketingAssets = useLiveQuery(() => db.marketingAssets.toArray()) || [];
 
     // Admin Actions (Now Async & Persistent)
@@ -237,18 +243,21 @@ const Organogram = ({ employees }: { employees: Employee[] }) => {
     useEffect(() => {
         if (!containerRef.current || employees.length === 0) return;
 
+        // Cast d3 to any to bypass type definition issues
+        const d3Any = d3 as any;
+
         // Clear previous SVG
-        d3.select(containerRef.current).selectAll("*").remove();
+        d3Any.select(containerRef.current).selectAll("*").remove();
 
-        const data = d3.stratify<Employee>()
-            .id(d => d.id)
-            .parentId(d => d.reportsTo)(employees);
+        const data = d3Any.stratify()
+            .id((d: any) => d.id)
+            .parentId((d: any) => d.reportsTo)(employees);
 
-        const treeLayout = d3.tree<Employee>().size([800, 400]);
-        const root = d3.hierarchy<Employee>(data as any);
+        const treeLayout = d3Any.tree().size([800, 400]);
+        const root = d3Any.hierarchy(data);
         treeLayout(root);
 
-        const svg = d3.select(containerRef.current)
+        const svg = d3Any.select(containerRef.current)
             .append("svg")
             .attr("width", "100%")
             .attr("height", 500)
@@ -264,9 +273,9 @@ const Organogram = ({ employees }: { employees: Employee[] }) => {
             .attr("fill", "none")
             .attr("stroke", "#cbd5e1")
             .attr("stroke-width", 2)
-            .attr("d", d3.linkHorizontal()
-                .x(d => (d as any).y)
-                .y(d => (d as any).x) as any
+            .attr("d", d3Any.linkHorizontal()
+                .x((d: any) => d.y)
+                .y((d: any) => d.x)
             );
 
         // Nodes
@@ -274,8 +283,8 @@ const Organogram = ({ employees }: { employees: Employee[] }) => {
             .data(root.descendants())
             .enter()
             .append("g")
-            .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
-            .attr("transform", d => `translate(${(d as any).y},${(d as any).x})`);
+            .attr("class", (d: any) => "node" + (d.children ? " node--internal" : " node--leaf"))
+            .attr("transform", (d: any) => `translate(${d.y},${d.x})`);
 
         node.append("circle")
             .attr("r", 20)
@@ -285,18 +294,18 @@ const Organogram = ({ employees }: { employees: Employee[] }) => {
 
         node.append("text")
             .attr("dy", 35)
-            .attr("x", d => d.children ? -8 : 8)
+            .attr("x", (d: any) => d.children ? -8 : 8)
             .style("text-anchor", "middle")
-            .text(d => d.data.data.name)
+            .text((d: any) => d.data.data.name)
             .style("font-size", "12px")
             .style("fill", "#334155")
             .style("font-weight", "600");
 
         node.append("text")
             .attr("dy", 48)
-            .attr("x", d => d.children ? -8 : 8)
+            .attr("x", (d: any) => d.children ? -8 : 8)
             .style("text-anchor", "middle")
-            .text(d => d.data.data.role)
+            .text((d: any) => d.data.data.role)
             .style("font-size", "10px")
             .style("fill", "#64748b");
 

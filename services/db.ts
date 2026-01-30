@@ -24,6 +24,8 @@ class SigniaDatabase extends Dexie {
         
         // Define tables and indexes
         // Cast to any to avoid type errors if Dexie type definitions are incomplete in the environment
+        
+        // Version 1: Initial Schema
         (this as any).version(1).stores({
             employees: 'id, department, role',
             banners: 'id, active, order',
@@ -32,7 +34,24 @@ class SigniaDatabase extends Dexie {
             wiki: 'id, category',
             apps: 'id, category',
             marketingAssets: 'id, type',
-            patchNotes: 'version' // Using version as primary key
+            patchNotes: 'version' 
+        });
+
+        // Version 2: Add date index to patchNotes 
+        (this as any).version(2).stores({
+            patchNotes: 'version, date'
+        });
+        
+        // Version 3: Redundant ensure of schema to force upgrade in stuck browsers
+        (this as any).version(3).stores({
+            employees: 'id, department, role',
+            banners: 'id, active, order',
+            posts: 'id, authorId, date, *tags',
+            resources: 'id, type',
+            wiki: 'id, category',
+            apps: 'id, category',
+            marketingAssets: 'id, type',
+            patchNotes: 'version, date'
         });
     }
 }
